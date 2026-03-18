@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LimitGuard Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a87f5;
+            --accent: #00d4aa;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --bg-dark: #0a0a0b;
+            --bg-card: #111113;
+            --bg-elevated: #1a1a1d;
+            --border-color: #2a2a2d;
+            --text-primary: #ffffff;
+            --text-secondary: #8a8a8a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .loading-logo svg {
+            width: 40px;
+            height: 40px;
+            color: white;
+        }
+        
+        .loading-text {
+            margin-top: 24px;
+            color: var(--text-secondary);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border-color);
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+        
+        .logo-text h1 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        
+        .logo-text p {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-right: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: rgba(26, 135, 245, 0.1);
+            color: var(--primary);
+            border-right-color: var(--primary);
+        }
+        
+        .main-content {
+            margin-right: 280px;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(10, 10, 11, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        .header h2 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-elevated));
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        /* Status */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+        
+        .status-dot.offline {
+            background: var(--danger);
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            transition: all 0.2s;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #146fe1);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #e84118);
+            color: white;
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 24px;
+        }
+        
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* Player row */
+        .player-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 1fr 120px;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: rgba(46, 213, 115, 0.15);
+            color: var(--success);
+        }
+        
+        .badge-danger {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
+        }
+        
+        .badge-warning {
+            background: rgba(255, 165, 2, 0.15);
+            color: var(--warning);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .delay-4 { animation-delay: 0.4s; opacity: 0; }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .main-content { margin-right: 0; }
+            .grid-4 { grid-template-columns: 1fr; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+        
+        /* Connection status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .connection-status.connected {
+            background: rgba(46, 213, 115, 0.1);
+            border: 1px solid rgba(46, 213, 115, 0.3);
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+        </div>
+        <p class="loading-text">جاري التحميل...</p>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>LimitGuard</h1>
+                    <p>Panel v2.0</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav>
+            <div class="nav-item active" onclick="showPage('dashboard')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z"/>
+                </svg>
+                <span>لوحة التحكم</span>
+            </div>
+            
+            <div class="nav-item" onclick="showPage('players')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z"/>
+                </svg>
+                <span>اللاعبين</span>
+            </div>
+            
+            <div class="nav-item" onclick="showPage('settings')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                </svg>
+                <span>الإعدادات</span>
+            </div>
+            
+            <div class="nav-item" onclick="logout()" style="color: var(--danger);">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                <span>تسجيل الخروج</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <h2 id="pageTitle">لوحة التحكم</h2>
+            <p id="pageSubtitle">مرحباً بك في LimitGuard Panel</p>
+        </header>
+
+        <!-- Content -->
+        <div style="padding: 24px;" id="pageContent">
+            
+            <!-- Dashboard Page -->
+            <section id="dashboardPage">
+                <!-- Connection Status -->
+                <div class="connection-status disconnected" id="connectionStatus">
+                    <div class="status-dot offline" id="statusDot"></div>
+                    <span id="statusText">السيرفر غير متصل</span>
+                    <span style="margin-right: auto; font-size: 12px; color: var(--text-secondary);" id="lastUpdate"></span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-4" style="margin-bottom: 24px;">
+                    <div class="stat-card animate-in delay-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="status-dot online"></div>
+                            <span class="text-sm" style="color: var(--text-secondary);">اللاعبين</span>
+                        </div>
+                        <div class="stat-value" id="playersCount">0</div>
+                        <div class="stat-label">متصل الآن</div>
+                    </div>
+                    
+                    <div class="stat-card animate-in delay-2">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="status-dot online"></div>
+                            <span class="text-sm" style="color: var(--text-secondary);">الموارد</span>
+                        </div>
+                        <div class="stat-value" id="resourcesCount">0</div>
+                        <div class="stat-label">مورد شغال</div>
+                    </div>
+                    
+                    <div class="stat-card animate-in delay-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="status-dot online"></div>
+                            <span class="text-sm" style="color: var(--text-secondary);">TPS</span>
+                        </div>
+                        <div class="stat-value" id="tpsCount">--</div>
+                        <div class="stat-label">سرعة السيرفر</div>
+                    </div>
+                    
+                    <div class="stat-card animate-in delay-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="status-dot online"></div>
+                            <span class="text-sm" style="color: var(--text-secondary);">الذاكرة</span>
+                        </div>
+                        <div class="stat-value" id="memoryUsage">--</div>
+                        <div class="stat-label">استخدام الذاكرة</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 16px; font-size: 18px;">إجراءات سريعة</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button class="btn btn-ghost" onclick="sendCommand('restart_server')">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            إعادة تشغيل
+                        </button>
+                        <button class="btn btn-ghost" onclick="sendCommand('kick_all')">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"/>
+                            </svg>
+                            طرد الكل
+                        </button>
+                        <button class="btn btn-ghost" onclick="sendCommand('announce')">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                            </svg>
+                            إعلان
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Players List -->
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size: 18px;">قائمة اللاعبين</h3>
+                    <div id="playersList">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 40px;">
+                            لا يوجد لاعبين متصلين
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Players Page -->
+            <section id="playersPage" style="display: none;">
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size: 18px;">جميع اللاعبين</h3>
+                    <div id="allPlayersList"></div>
+                </div>
+            </section>
+
+            <!-- Settings Page -->
+            <section id="settingsPage" style="display: none;">
+                <div class="card">
+                    <h3 style="margin-bottom: 16px; font-size: 18px;">إعدادات الاتصال</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                        تأكد من تطابق الإعدادات مع ملف config.lua في السيرفر
+                    </p>
+                    
+                    <div style="background: var(--bg-elevated); padding: 16px; border-radius: 12px; font-family: monospace; font-size: 13px;">
+                        <p style="margin-bottom: 8px;"><strong>Panel URL:</strong> <span id="currentURL"></span></p>
+                        <p><strong>API Status:</strong> <span class="badge badge-success">نشط</span></p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        
+        const SESSION_KEY = 'limitguard_session';
+
+        // ==========================================
+        // AUTH CHECK
+        // ==========================================
+        
+        (function checkAuth() {
+            const session = localStorage.getItem(SESSION_KEY);
+            if (!session) {
+                window.location.replace('login.html');
+            }
+        })();
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hidden');
+            }, 500);
+            
+            // Show current URL
+            document.getElementById('currentURL').textContent = window.location.origin;
+            
+            // Start polling
+            fetchServerData();
+            setInterval(fetchServerData, 5000);
+        });
+
+        // ==========================================
+        // FETCH SERVER DATA
+        // ==========================================
+        
+        async function fetchServerData() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                updateUI(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showDisconnected();
+            }
+        }
+
+        function updateUI(data) {
+            const statusContainer = document.getElementById('connectionStatus');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
+            if (data.connected) {
+                statusContainer.className = 'connection-status connected';
+                statusDot.className = 'status-dot online';
+                statusText.textContent = 'السيرفر متصل';
+                lastUpdate.textContent = 'آخر تحديث: ' + new Date(data.lastUpdate).toLocaleTimeString('ar');
+                
+                // Update stats
+                document.getElementById('playersCount').textContent = data.players ? data.players.length : 0;
+                document.getElementById('resourcesCount').textContent = data.stats?.resourcesRunning || 0;
+                document.getElementById('tpsCount').textContent = data.stats?.tps || '--';
+                document.getElementById('memoryUsage').textContent = data.stats?.memory || '--';
+                
+                // Update players list
+                renderPlayers(data.players || []);
+            } else {
+                showDisconnected();
+            }
+        }
+
+        function showDisconnected() {
+            const statusContainer = document.getElementById('connectionStatus');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusContainer.className = 'connection-status disconnected';
+            statusDot.className = 'status-dot offline';
+            statusText.textContent = 'السيرفر غير متصل';
+            
+            document.getElementById('playersCount').textContent = '0';
+            document.getElementById('resourcesCount').textContent = '--';
+            document.getElementById('tpsCount').textContent = '--';
+            document.getElementById('memoryUsage').textContent = '--';
+        }
+
+        function renderPlayers(players) {
+            const container = document.getElementById('playersList');
+            
+            if (players.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">لا يوجد لاعبين متصلين</p>';
+                return;
+            }
+            
+            container.innerHTML = players.map(player => `
+                <div class="player-row">
+                    <div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>
+                    <div>
+                        <div style="font-weight: 600;">${player.name}</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">ID: ${player.id}</div>
+                    </div>
+                    <div>
+                        <span class="badge badge-success">متصل</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-ghost" style="padding: 8px 12px; font-size: 12px;" onclick="kickPlayer(${player.id})">طرد</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // COMMANDS
+        // ==========================================
+        
+        async function sendCommand(command, data = {}) {
+            try {
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, data })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('تم إرسال الأمر بنجاح');
+                }
+            } catch (error) {
+                alert('فشل إرسال الأمر');
+            }
+        }
+
+        function kickPlayer(playerId) {
+            if (confirm('هل أنت متأكد من طرد هذا اللاعب؟')) {
+                sendCommand('kick', { playerId });
+            }
+        }
+
+        // ==========================================
+        // NAVIGATION
+        // ==========================================
+        
+        function showPage(pageName) {
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Update page
+            document.querySelectorAll('#pageContent > section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(pageName + 'Page').style.display = 'block';
+            
+            // Update title
+            const titles = {
+                dashboard: 'لوحة التحكم',
+                players: 'اللاعبين',
+                settings: 'الإعدادات'
+            };
+            document.getElementById('pageTitle').textContent = titles[pageName];
+        }
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+        
+        function logout() {
+            localStorage.removeItem(SESSION_KEY);
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
