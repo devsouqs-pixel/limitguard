@@ -19,7 +19,7 @@ const CONFIG = {
     API_KEY: 'sk_my_secret_key_12345',
     
     // مفتاح الترخيص - يجب أن يطابق ما في config.lua
-    LICENSE_KEY: 'LLS-2009204-199-bd',
+    LICENSE_KEY: 'LG-7F3K9-AX2M5-PQ8R4',
 };
 
 // Middleware
